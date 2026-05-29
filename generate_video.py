@@ -2,7 +2,7 @@ import random
 import json
 from PIL import Image, ImageDraw, ImageFont
 from gtts import gTTS
-from moviepy.editor import *
+from moviepy import *
 
 # ۱. خواندن فایل جملات و انتخاب یکی تصادفی
 with open("quotes.json", encoding="utf-8") as f:
