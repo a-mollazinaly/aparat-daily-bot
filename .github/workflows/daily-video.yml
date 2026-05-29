@@ -17,13 +17,15 @@ jobs:
           python-version: '3.10'
 
       - name: Install packages
-        run: pip install moviepy==1.0.3 pillow edge-tts requests
+        run: |
+          pip install moviepy==1.0.3 pillow edge-tts
+          pip install selenium webdriver-manager
 
       - name: Generate Video
         run: python generate_video.py
 
-      - name: Upload to Aparat
+      - name: Upload to Aparat (Selenium)
         env:
           APARAT_USERNAME: ${{ secrets.APARAT_USERNAME }}
           APARAT_PASSWORD: ${{ secrets.APARAT_PASSWORD }}
-        run: python upload_to_aparat.py
+        run: python upload_selenium.py
