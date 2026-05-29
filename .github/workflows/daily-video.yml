@@ -2,8 +2,8 @@ name: Daily Aparat Bot
 
 on:
   schedule:
-    - cron: '30 5 * * *'   # هر روز ساعت ۵:۳۰ صبح UTC (حدود ۹ صبح ایران)
-  workflow_dispatch:        # دکمه اجرای دستی
+    - cron: '30 5 * * *'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -22,12 +22,8 @@ jobs:
       - name: Generate Video
         run: python generate_video.py
 
-      # بخش آپلود را فعلاً غیرفعال می‌کنیم چون API نداریم.
-      # بعد از دریافت API Key، کامنت‌ها را بردارید و Secrets را تنظیم کنید.
-      # - name: Upload to Aparat
-      #   env:
-      #     APARAT_USERNAME: ${{ secrets.APARAT_USERNAME }}
-      #     APARAT_PASSWORD: ${{ secrets.APARAT_PASSWORD }}
-      #     CLIENT_ID: ${{ secrets.CLIENT_ID }}
-      #     CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
-      #   run: python upload_to_aparat.py
+      - name: Upload to Aparat
+        env:
+          APARAT_USERNAME: ${{ secrets.APARAT_USERNAME }}
+          APARAT_PASSWORD: ${{ secrets.APARAT_PASSWORD }}
+        run: python upload_to_aparat.py
