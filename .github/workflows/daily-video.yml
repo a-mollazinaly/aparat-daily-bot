@@ -18,7 +18,7 @@ jobs:
 
       - name: Install packages
         run: pip install moviepy==1.0.3 pillow edge-tts requests
-        
+
       - name: Generate Video
         run: python generate_video.py
 
