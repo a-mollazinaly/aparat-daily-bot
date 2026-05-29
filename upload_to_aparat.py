@@ -2,8 +2,8 @@ import os
 import hashlib
 import requests
 
-USERNAME = os.environ['APARAT_USERNAME']
-PASSWORD = os.environ['APARAT_PASSWORD']
+USERNAME = os.environ['A_Mollazinaly']
+PASSWORD = os.environ['Alireza1388']
 
 # ۱. لاگین و گرفتن ltoken
 def login():
