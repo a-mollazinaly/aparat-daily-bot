@@ -1,24 +1,26 @@
-import random
-import json
+import random, json, asyncio, textwrap
 from PIL import Image, ImageDraw, ImageFont
-from gtts import gTTS
 from moviepy import *
+import edge_tts
 
-# ۱. خواندن فایل جملات و انتخاب یکی تصادفی
-with open("quotes.json", encoding="utf-8") as f:
+# ---------- تنظیمات ----------
+QUOTES_FILE = "quotes.json"
+BACKGROUND_VIDEO = "background.mp4"
+MUSIC_FILE = "music.mp3"
+FONT_PATH = "Vazir.ttf"
+OUTPUT_VIDEO = "output.mp4"
+
+# ۱. انتخاب یک جمله تصادفی از فایل json
+with open(QUOTES_FILE, encoding="utf-8") as f:
     quotes = json.load(f)
 quote = random.choice(quotes)
 
-# ۲. ساختن یک عکس از جمله (پس‌زمینه مشکی و متن سفید)
+# ۲. ساختن تصویر از جمله
 img = Image.new('RGB', (1920, 1080), color=(0, 0, 0))
 draw = ImageDraw.Draw(img)
-font = ImageFont.truetype("Vazir.ttf", 70)
+font = ImageFont.truetype(FONT_PATH, 70)
 
-# شکستن جمله به خط‌های کوتاه
-import textwrap
 lines = textwrap.wrap(quote, width=30)
-
-# نوشتن خطوط وسط صفحه
 y = 300
 for line in lines:
     line_width = font.getlength(line)
@@ -28,26 +30,24 @@ for line in lines:
 
 img.save("quote_image.png")
 
-# ۳. ساختن فایل صوتی از جمله (با صدای کامپیوتری فارسی)
-tts = gTTS(text=quote, lang='fa', slow=False)
-tts.save("speech.mp3")
+# ۳. تولید فایل صوتی با edge-tts (گویندهٔ فارسی)
+async def generate_audio():
+    tts = edge_tts.Communicate(quote, voice="fa-IR-FaridNeural")
+    await tts.save("speech.mp3")
 
-# ۴. ساختن ویدیو: ترکیب ویدیوی پس‌زمینه، عکس و صدا
-video_bg = VideoFileClip("background.mp4").without_audio()
-audio_speech = AudioFileClip("speech.mp3")
-music = AudioFileClip("music.mp3").volumex(0.3)  # کم کردن صدای موسیقی
+asyncio.run(generate_audio())
 
-# تنظیم مدت زمان ویدیو
-duration = audio_speech.duration + 0.5
+# ۴. ترکیب و ساخت ویدیو
+video_bg = VideoFileClip(BACKGROUND_VIDEO).without_audio()
+speech_audio = AudioFileClip("speech.mp3")
+music = AudioFileClip(MUSIC_FILE).volumex(0.3)
+
+duration = speech_audio.duration + 0.5
 video_bg = video_bg.subclip(0, duration)
 music = music.subclip(0, duration)
 
-# مخلوط کردن دو صدا
-final_audio = CompositeAudioClip([audio_speech, music])
-
-# لایه تصویر جمله
+final_audio = CompositeAudioClip([speech_audio, music])
 img_clip = ImageClip("quote_image.png").set_duration(duration).set_position('center')
 
-# ترکیب نهایی
 final_video = CompositeVideoClip([video_bg, img_clip]).set_audio(final_audio)
-final_video.write_videofile("output.mp4", fps=24, codec='libx264', audio_codec='aac')
+final_video.write_videofile(OUTPUT_VIDEO, fps=24, codec='libx264', audio_codec='aac')
