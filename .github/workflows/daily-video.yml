@@ -1,0 +1,33 @@
+name: Daily Aparat Bot
+
+on:
+  schedule:
+    - cron: '30 5 * * *'   # هر روز ساعت ۵:۳۰ صبح UTC (حدود ۹ صبح ایران)
+  workflow_dispatch:        # دکمه اجرای دستی
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install packages
+        run: pip install moviepy pillow gtts requests
+
+      - name: Generate Video
+        run: python generate_video.py
+
+      # بخش آپلود را فعلاً غیرفعال می‌کنیم چون API نداریم.
+      # بعد از دریافت API Key، کامنت‌ها را بردارید و Secrets را تنظیم کنید.
+      # - name: Upload to Aparat
+      #   env:
+      #     APARAT_USERNAME: ${{ secrets.APARAT_USERNAME }}
+      #     APARAT_PASSWORD: ${{ secrets.APARAT_PASSWORD }}
+      #     CLIENT_ID: ${{ secrets.CLIENT_ID }}
+      #     CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+      #   run: python upload_to_aparat.py
