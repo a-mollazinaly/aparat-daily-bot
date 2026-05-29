@@ -16,16 +16,28 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install packages
+      - name: Install system dependencies (Chrome)
         run: |
-          pip install moviepy==1.0.3 pillow edge-tts
-          pip install selenium webdriver-manager
+          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Install Python packages
+        run: pip install moviepy==1.0.3 pillow edge-tts selenium webdriver-manager
 
       - name: Generate Video
         run: python generate_video.py
 
-      - name: Upload to Aparat (Selenium)
+      - name: Upload to Aparat
         env:
           APARAT_USERNAME: ${{ secrets.APARAT_USERNAME }}
           APARAT_PASSWORD: ${{ secrets.APARAT_PASSWORD }}
         run: python upload_selenium.py
+
+      - name: Upload video artifact (backup)
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: daily-video
+          path: output.mp4
