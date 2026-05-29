@@ -1,21 +1,20 @@
 import random, json, asyncio, textwrap
 from PIL import Image, ImageDraw, ImageFont
-from moviepy import *
+from moviepy.editor import *
 import edge_tts
 
-# ---------- تنظیمات ----------
 QUOTES_FILE = "quotes.json"
 BACKGROUND_VIDEO = "background.mp4"
 MUSIC_FILE = "music.mp3"
 FONT_PATH = "Vazir.ttf"
 OUTPUT_VIDEO = "output.mp4"
 
-# ۱. انتخاب یک جمله تصادفی از فایل json
+# انتخاب جمله
 with open(QUOTES_FILE, encoding="utf-8") as f:
     quotes = json.load(f)
 quote = random.choice(quotes)
 
-# ۲. ساختن تصویر از جمله
+# ساخت تصویر
 img = Image.new('RGB', (1920, 1080), color=(0, 0, 0))
 draw = ImageDraw.Draw(img)
 font = ImageFont.truetype(FONT_PATH, 70)
@@ -23,24 +22,24 @@ font = ImageFont.truetype(FONT_PATH, 70)
 lines = textwrap.wrap(quote, width=30)
 y = 300
 for line in lines:
-    line_width = font.getlength(line)
+    line_width = font.getsize(line)[0]   # اصلاح‌شده
     x = (1920 - line_width) / 2
     draw.text((x, y), line, font=font, fill=(255, 255, 255))
     y += 100
 
 img.save("quote_image.png")
 
-# ۳. تولید فایل صوتی با edge-tts (گویندهٔ فارسی)
+# تولید صوت با edge-tts
 async def generate_audio():
     tts = edge_tts.Communicate(quote, voice="fa-IR-FaridNeural")
     await tts.save("speech.mp3")
 
 asyncio.run(generate_audio())
 
-# ۴. ترکیب و ساخت ویدیو
+# ساخت ویدیو
 video_bg = VideoFileClip(BACKGROUND_VIDEO).without_audio()
 speech_audio = AudioFileClip("speech.mp3")
-music = AudioFileClip(MUSIC_FILE).volumex(0.3)
+music = AudioFileClip(MUSIC_FILE).volumex(0.3)   # این تابع با moviepy 1.0.3 کار می‌کند
 
 duration = speech_audio.duration + 0.5
 video_bg = video_bg.subclip(0, duration)
