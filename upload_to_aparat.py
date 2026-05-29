@@ -1,48 +1,66 @@
 import os
+import hashlib
 import requests
 
-def get_access_token():
-    data = {
-        "grant_type": "password",
-        "client_id": os.environ['CLIENT_ID'],
-        "client_secret": os.environ['CLIENT_SECRET'],
-        "username": os.environ['APARAT_USERNAME'],
-        "password": os.environ['APARAT_PASSWORD']
-    }
-    resp = requests.post("https://api.aparat.com/oauth/token", data=data)
-    return resp.json().get('access_token')
+USERNAME = os.environ['APARAT_USERNAME']
+PASSWORD = os.environ['APARAT_PASSWORD']
 
-def upload_video(file_path, title, description, tags, category):
-    token = get_access_token()
-    headers = {"Authorization": f"Bearer {token}"}
+# ۱. لاگین و گرفتن ltoken
+def login():
+    # رمز عبور را ابتدا MD5 سپس SHA1 کن (طبق مستندات)
+    pass_md5 = hashlib.md5(PASSWORD.encode()).hexdigest()
+    pass_sha1 = hashlib.sha1(pass_md5.encode()).hexdigest()
     
-    # قدم اول: درخواست آماده‌سازی
-    prepare = requests.post("https://api.aparat.com/rest/v1/video/prepare", headers=headers, json={
-        "title": title,
-        "category": category,
-        "description": description,
-        "tags": tags
-    })
-    info = prepare.json()
-    upload_url = info['url']
-    file_id = info['file_id']
+    url = "https://www.aparat.com/etc/api/login"
+    params = {
+        "luser": USERNAME,
+        "lpass": pass_sha1
+    }
+    resp = requests.get(url, params=params)
+    data = resp.json()
+    ltoken = data.get('login', {}).get('ltoken')
+    if not ltoken:
+        raise Exception(f"Login failed: {data}")
+    return ltoken
+
+# ۲. گرفتن فرم آپلود
+def get_upload_form(ltoken):
+    url = "https://www.aparat.com/etc/api/uploadform"
+    params = {
+        "luser": USERNAME,
+        "ltoken": ltoken
+    }
+    resp = requests.get(url, params=params)
+    data = resp.json()
+    form_action = data['uploadform']['formAction']
+    frm_id = data['uploadform']['frm-id']
+    return form_action, frm_id
+
+# ۳. آپلود ویدیو
+def upload_video(file_path, title, category, tags, description, comment="yes"):
+    ltoken = login()
+    form_action, frm_id = get_upload_form(ltoken)
     
-    # آپلود فایل
     with open(file_path, 'rb') as f:
-        requests.put(upload_url, data=f)
-    
-    # نهایی‌سازی
-    commit = requests.post("https://api.aparat.com/rest/v1/video/commit", headers=headers, json={
-        "file_id": file_id
-    })
-    return commit.json()
+        files = {'video': f}
+        data = {
+            'frm-id': frm_id,
+            'data[title]': title,
+            'data[category]': category,      # مثلاً ۱ برای سرگرمی
+            'data[tags]': tags,               # با - جدا شود: "انگیزشی-موفقیت"
+            'data[descr]': description,
+            'data[comment]': comment,         # "yes" یا "no"
+        }
+        resp = requests.post(form_action, files=files, data=data)
+        result = resp.json()
+        print(result)
+        return result
 
 if __name__ == "__main__":
-    # این مقادیر را می‌توانید تغییر دهید
+    # این مقادیر را بر اساس سلیقه تنظیم کن
     title = "جمله انگیزشی روز"
-    description = "هر روز یک جمله زیبا برای روحیه شما.\nحمایت مالی: (لینک شما)"
-    tags = ["انگیزشی", "جمله روز", "موفقیت"]
-    category = 1  # دسته‌بندی (مثلاً ۱ برای سرگرمی)
+    description = "هر روز یک جمله زیبا برای شما.\nحمایت مالی: https://zarinp.al/..."
+    tags = "انگیزشی-جمله روز-موفقیت"
+    category = 1  # دسته‌بندی سرگرمی
     
-    result = upload_video("output.mp4", title, description, tags, category)
-    print(result)
+    upload_video("output.mp4", title, category, tags, description)
