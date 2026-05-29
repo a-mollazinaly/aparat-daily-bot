@@ -9,12 +9,12 @@ MUSIC_FILE = "music.mp3"
 FONT_PATH = "Vazir.ttf"
 OUTPUT_VIDEO = "output.mp4"
 
-# انتخاب جمله
+# ۱. انتخاب جمله تصادفی
 with open(QUOTES_FILE, encoding="utf-8") as f:
     quotes = json.load(f)
 quote = random.choice(quotes)
 
-# ساخت تصویر
+# ۲. ساخت تصویر شامل جمله
 img = Image.new('RGB', (1920, 1080), color=(0, 0, 0))
 draw = ImageDraw.Draw(img)
 font = ImageFont.truetype(FONT_PATH, 70)
@@ -22,24 +22,25 @@ font = ImageFont.truetype(FONT_PATH, 70)
 lines = textwrap.wrap(quote, width=30)
 y = 300
 for line in lines:
-    line_width = font.getsize(line)[0]   # اصلاح‌شده
+    # استفاده از getlength که در تمام نسخه‌های جدید pillow پشتیبانی می‌شود
+    line_width = font.getlength(line)
     x = (1920 - line_width) / 2
     draw.text((x, y), line, font=font, fill=(255, 255, 255))
     y += 100
 
 img.save("quote_image.png")
 
-# تولید صوت با edge-tts
+# ۳. تولید فایل صوتی با edge-tts
 async def generate_audio():
     tts = edge_tts.Communicate(quote, voice="fa-IR-FaridNeural")
     await tts.save("speech.mp3")
 
 asyncio.run(generate_audio())
 
-# ساخت ویدیو
+# ۴. ترکیب و ساخت ویدیو
 video_bg = VideoFileClip(BACKGROUND_VIDEO).without_audio()
 speech_audio = AudioFileClip("speech.mp3")
-music = AudioFileClip(MUSIC_FILE).volumex(0.3)   # این تابع با moviepy 1.0.3 کار می‌کند
+music = AudioFileClip(MUSIC_FILE).volumex(0.3)
 
 duration = speech_audio.duration + 0.5
 video_bg = video_bg.subclip(0, duration)
